@@ -2,7 +2,6 @@ flask
 flask-sqlalchemy
 psycopg2-binary
 redis
-redis-server
 celery
 requests
 openai

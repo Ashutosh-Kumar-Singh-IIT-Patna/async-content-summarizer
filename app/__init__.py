@@ -5,10 +5,12 @@ from app.routes import api
 from flasgger import Swagger
 import logging
 
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 
 
 def create_app():
+    """Create and configure Flask application"""
     app = Flask(__name__)
     app.config.from_object(Config)
 
@@ -39,12 +41,17 @@ def create_app():
         "schemes": ["http", "https"],
     }
 
+    # Initialize Swagger
     Swagger(app, config=swagger_config, template=swagger_template)
 
+    # Initialize database
     db.init_app(app)
 
+    # Create tables if they don't exist
     with app.app_context():
-        db.create_all()  # creates tables if not exist
+        db.create_all()
 
+    # Register API routes
     app.register_blueprint(api)
+
     return app

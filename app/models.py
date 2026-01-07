@@ -3,10 +3,13 @@ import uuid
 from enum import Enum
 from datetime import datetime
 
+# Initialize database
 db = SQLAlchemy()
 
 
 class JobStatus(str, Enum):
+    """Possible states for a job"""
+
     QUEUED = "queued"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -14,16 +17,18 @@ class JobStatus(str, Enum):
 
 
 class ContentType(str, Enum):
+    """Types of content that can be summarized"""
+
     TEXT = "text"
     URL = "url"
 
 
 class Job(db.Model):
+    """Database model for summarization jobs"""
+
     __tablename__ = "jobs"
 
-    id = db.Column(
-        db.String, primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id = db.Column(db.String, primary_key=True, default=lambda: str(uuid.uuid4()))
     content_hash = db.Column(db.String, index=True, nullable=True)
     content_type = db.Column(db.Enum(ContentType), nullable=False)
     content = db.Column(db.Text, nullable=False)

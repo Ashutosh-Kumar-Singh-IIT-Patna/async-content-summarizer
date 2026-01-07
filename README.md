@@ -50,9 +50,7 @@ cd async-summarizer
 python -m venv venv
 
 # Activate virtual environment
-source venv/bin/activate  # On Linux/Mac
-# OR
-venv\Scripts\activate  # On Windows
+source venv/bin/activate
 ```
 
 ### 3. Install Dependencies
@@ -61,7 +59,13 @@ venv\Scripts\activate  # On Windows
 pip install -r requirements.txt
 ```
 
-### 4. Set Up PostgreSQL Database
+### 4. Install Redis Server
+
+```bash
+sudo apt install redis-server
+```
+
+### 5. Set Up PostgreSQL Database
 
 ```bash
 # Log into PostgreSQL
@@ -80,7 +84,7 @@ Alternatively, you can use the provided SQL script:
 psql -U postgres -f create_db.sql
 ```
 
-### 5. Configure Environment Variables
+### 6. Configure Environment Variables
 
 Create a `.env` file in the project root directory by copying the example:
 
@@ -139,6 +143,34 @@ flask run
 ```
 
 The application will be available at `http://localhost:5000`
+
+---
+
+## Project Structure
+
+```
+async-summarizer/
+├── app/
+│   ├── __init__.py            # Flask app factory
+│   ├── config.py              # Configuration management
+│   ├── models.py              # Database models
+│   ├── routes.py              # API endpoints
+│   ├── swagger.py             # Swagger/OpenAPI specs
+│   ├── services/
+│   │   ├── __init__.py        # Services package init
+│   │   ├── cache_service.py   # Redis caching logic
+│   │   ├── content_fetcher.py # URL content extraction
+│   │   ├── summarizer.py      # AI summarization logic
+│   │   └── worker.py          # Celery task (worker)
+│   └── utils/
+│       ├── __init__.py        # Utils package init
+│       └── helpers.py         # Utility functions
+├── .env                       # Environment variables (create this)
+├── .env.example               # Example environment file
+├── create_db.sql              # Database creation
+├── requirements.txt           # Python dependencies
+└── README.md                  # This file
+```
 
 ---
 
@@ -292,34 +324,6 @@ http://localhost:5000/swagger/
     "error": "<error details>"
   }
   ```
-
----
-
-## Project Structure
-
-```
-async-summarizer/
-├── app/
-│   ├── __init__.py          # Flask app factory
-│   ├── config.py            # Configuration management
-│   ├── models.py            # Database models
-│   ├── routes.py            # API endpoints
-│   ├── swagger.py           # Swagger/OpenAPI specs
-│   ├── services/
-│   │   ├── __init__.py      # Services package init
-│   │   ├── cache_service.py # Redis caching logic
-│   │   ├── content_fetcher.py # URL content extraction
-│   │   ├── summarizer.py    # AI summarization logic
-│   │   └── worker.py        # Celery task definitions
-│   └── utils/
-│       ├── __init__.py      # Utils package init
-│       └── helpers.py       # Utility functions
-├── .env                     # Environment variables (create this)
-├── .env.example             # Example environment file
-├── create_db.sql            # Database creation script
-├── requirements.txt         # Python dependencies
-└── README.md                # This file
-```
 
 ---
 

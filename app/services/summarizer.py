@@ -14,7 +14,9 @@ client = OpenAI(
 
 @generic_retry()
 def summarize(text: str) -> str:
+    """Generate a summary of the provided text using LLM"""
     logger.info("Starting summarization for text of length: %d", len(text))
+
     try:
         response = client.chat.completions.create(
             model=Config.LLM_MODEL,
@@ -24,11 +26,15 @@ def summarize(text: str) -> str:
             ],
             timeout=20,
         )
-        summary = response.choices[0].message.content.strip()
+
+        content = response.choices[0].message.content
+        summary = content.strip() if content else ""
         logger.info(
             "Summarization completed successfully, summary length: %d", len(summary)
         )
+
         return summary
+
     except Exception as e:
         logger.error("Summarization failed: %s", str(e))
         raise

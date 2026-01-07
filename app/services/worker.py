@@ -1,6 +1,7 @@
 from celery import Celery
 from dotenv import load_dotenv
 
+# Load environment variables before importing Config
 load_dotenv()
 
 from app.config import Config
@@ -14,6 +15,7 @@ import time
 
 logger = logging.getLogger(__name__)
 
+# Initialize Celery worker
 celery = Celery(
     "worker",
     broker=Config.CELERY_BROKER_URL,
@@ -23,13 +25,15 @@ celery = Celery(
 
 @celery.task(bind=True)
 def process_job(self, job_id):
-    # Start timing
+    """Process a summarization job asynchronously"""
     start_time = time.time()
+
     # Import here to avoid circular import
     from app import create_app
 
     logger.info("Starting processing for job: %s", job_id)
     app = create_app()
+
     with app.app_context():
         job = Job.query.get(job_id)
         if not job:
@@ -47,10 +51,12 @@ def process_job(self, job_id):
             logger.warning("Cache retrieval failed for job %s: %s", job_id, str(e))
             pass
 
+        # Use cached summary if available
         if cached_summary:
             job.summary = cached_summary
             job.status = JobStatus.COMPLETED
             job.cached = True
+
             # Calculate processing time
             end_time = time.time()
             job.processing_time_ms = int((end_time - start_time) * 1000)
@@ -58,12 +64,14 @@ def process_job(self, job_id):
             logger.info("Job %s completed from cache", job_id)
             return
 
+        # Process new summary
         try:
             job.status = JobStatus.PROCESSING
             job.cached = False
             commit_pgdb()
             logger.info("Job %s status updated to PROCESSING", job_id)
 
+            # Fetch content if URL, otherwise use text
             if job.content_type == ContentType.URL:
                 logger.info("Fetching content from URL for job %s", job_id)
                 content = fetch_url_content(job.content)
@@ -71,12 +79,14 @@ def process_job(self, job_id):
                 logger.info("Using text content for job %s", job_id)
                 content = job.content
 
+            # Generate summary
             logger.info("Summarizing content for job %s", job_id)
             summary = summarize(content)
 
             job.summary = summary
             job.status = JobStatus.COMPLETED
 
+            # Cache the new summary
             logger.info("Setting cache for job %s, hash: %s", job_id, job.content_hash)
             set_cached_summary(job.content_hash, summary)
 

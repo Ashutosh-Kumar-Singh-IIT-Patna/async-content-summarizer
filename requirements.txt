@@ -1,0 +1,12 @@
+flask
+flask-sqlalchemy
+psycopg2-binary
+redis
+redis-server
+celery
+requests
+openai
+python-dotenv
+beautifulsoup4
+python-dotenv
+flasgger

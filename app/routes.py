@@ -9,17 +9,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Create API blueprint
 api = Blueprint("api", __name__)
 
 
 @api.route("/submit", methods=["POST"])
 @swag_from(submit_spec)
 def submit():
+    """Submit content for summarization"""
     try:
         data = request.json
         text = data.get("text")
         url = data.get("url")
 
+        # Validate input: must provide text OR url, not both
         if text and url:
             logger.warning("Invalid request: both 'text' and 'url' provided")
             return jsonify({"error": "Provide 'text' or 'url', not both"}), 400
@@ -27,9 +30,11 @@ def submit():
             logger.warning("Invalid request: neither 'text' nor 'url' " "provided")
             return jsonify({"error": "Provide either 'text' or 'url'"}), 400
 
+        # Determine content type and validate
         if url:
             content_type = ContentType.URL
             content = url
+
             # Validate URL format
             parsed = urllib.parse.urlparse(url)
             if not parsed.scheme or not parsed.netloc:
@@ -39,9 +44,11 @@ def submit():
             content_type = ContentType.TEXT
             content = text
 
+        # Generate content hash for caching
         content_hash = hash_content(content)
         logger.info("Processing content with hash: %s", content_hash)
 
+        # Create job in database
         try:
             job = Job(
                 content_hash=content_hash,
@@ -55,6 +62,7 @@ def submit():
             logger.error("Job creation failed: %s", str(e))
             return jsonify({"error": f"Job creation error: {str(e)}"}), 500
 
+        # Queue job for async processing
         try:
             process_job.delay(job.id)
             logger.info("Queued job %s for processing", job.id)
@@ -79,12 +87,15 @@ def submit():
 @api.route("/status/<job_id>")
 @swag_from(status_spec)
 def status(job_id):
+    """Get the current status of a job"""
     try:
         logger.info("Checking status for job: %s", job_id)
         job = Job.query.get(job_id)
+
         if not job:
             logger.warning("Job not found: %s", job_id)
             return jsonify({"error": "Job not found"}), 404
+
         logger.info("Job %s status: %s", job_id, job.status)
         return (
             jsonify(
@@ -104,12 +115,15 @@ def status(job_id):
 @api.route("/result/<job_id>")
 @swag_from(result_spec)
 def result(job_id):
+    """Get the result of a completed job"""
     try:
         logger.info("Retrieving result for job: %s", job_id)
         job = Job.query.get(job_id)
+
         if not job:
             logger.warning("Job not found for result: %s", job_id)
             return jsonify({"error": "Job not found"}), 404
+
         if job.status != JobStatus.COMPLETED:
             logger.info("Job %s not ready, status: %s", job_id, job.status)
             return jsonify({"error": "Not ready"}), 400

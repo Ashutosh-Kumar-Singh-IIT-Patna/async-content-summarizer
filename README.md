@@ -355,9 +355,3 @@ psql -U postgres -c "\l" | grep async_summarizer
 - Ensure the model name is correct and available
 
 ---
-
-## Development Tips
-
-- Monitor Celery tasks in real-time with `--loglevel=info`
-- Use Swagger UI for quick API testing
-- Check Flask logs for debugging API issues
